@@ -69,14 +69,29 @@ snk = audioDeviceWriter(...
 %% SCOPES + VISUALIZATION
 
 % Oscilloscope
-quickScope = timescope(...
+scope = timescope(...
     'SampleRate', src.SampleRate, ...
-    'BufferLength', src.SampleRate*2*2, ...
+    'BufferLength', src.SampleRate*4, ...
     'YLimits', [-1, 1]);
 
 % Spectrum Analyzer
-quickSpec = dsp.SpectrumAnalyzer(...
-    );
+spectrum = dsp.SpectrumAnalyzer(...
+    'NumInputPorts', 1, ...
+    'SpectrumType', 'Power', ...
+    'ViewType', 'Spectrum', ...
+    'SampleRate', src.SampleRate, ...
+    'PlotAsTwoSidedSpectrum', false, ...
+    'FrequencyScale', 'Log');
+
+% Spectrogram
+spectrogram = dsp.SpectrumAnalyzer(...
+    'NumInputPorts', 1, ...
+    'SpectrumType', 'Power', ...
+    'ViewType', 'Spectrogram', ...
+    'SampleRate', src.SampleRate, ...
+    'PlotAsTwoSidedSpectrum', false, ...
+    'FrequencyScale', 'Log');
+    
 
 %% FX BLOCKS
 
@@ -88,7 +103,7 @@ reverb = reverberator(...
 
 %% AUDIO STREAM LOOP
 
-loopTime = 1; % (seconds), Used only for DEVICE mode
+loopTime = 5; % (seconds), Used only for DEVICE mode
 
 if strcmp(inputMode, 'FILE')
     while ~isDone(src)
@@ -109,15 +124,33 @@ end
 release(src)
 release(snk)
 release(reverb)
-release(quickScope)
+release(scope)
+release(spectrum)
+release(spectrogram)
 
 %% SPECTRAL WAVETABLE ANALOG/GUITAR ALGORITHM
 
     function swag()
-        audio = src();
-        reverbAudio = reverb(audio);
-        snk(reverbAudio);
-        % quickScope([audio, mean(reverbAudio, 2)])
+        inputAudio = src();
+        
+        % Algorithm goes here
+        step1 = ammod(inputAudio, 300, src.SampleRate);
+        outputAudio = reverb(step1);
+        
+        snk(outputAudio);
+        
+        % Optional visualization
+        
+        % scope(mean(inputAudio, 2))
+        % scope(mean(outputAudio, 2))
+        % scope([mean(inputAudio, 2), mean(outputAudio, 2)])
+        
+        % spectrum(mean(inputAudio, 2))
+        % spectrum(mean(outputAudio, 2))
+        % spectrum([mean(inputAudio, 2), mean(outputAudio, 2)])
+        
+        % spectrogram(mean(inputAudio, 2))
+        spectrogram(mean(outputAudio, 2))
     end
 
 end
