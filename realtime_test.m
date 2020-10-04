@@ -1,3 +1,4 @@
+function realtime_test
 %% AUDIO INPUT
 
 % Choose input mode: either 'FILE' or 'DEVICE'
@@ -68,13 +69,13 @@ snk = audioDeviceWriter(...
 %% SCOPES + VISUALIZATION
 
 % Oscilloscope
-tScope = timescope(...
+quickScope = timescope(...
     'SampleRate', src.SampleRate, ...
     'BufferLength', src.SampleRate*2*2, ...
     'YLimits', [-1, 1]);
 
 % Spectrum Analyzer
-fScope = dsp.SpectrumAnalyzer(...
+quickSpec = dsp.SpectrumAnalyzer(...
     );
 
 %% FX BLOCKS
@@ -89,26 +90,16 @@ reverb = reverberator(...
 
 loopTime = 1; % (seconds), Used only for DEVICE mode
 
-% This is pretty horrible right now since the loop has to be duplicated.
-% This would be fixed if all processing occurred in functions instead of
-% objects (so, not the reverb example)
-
 if strcmp(inputMode, 'FILE')
     while ~isDone(src)
-        audio = src();
-        reverbAudio = reverb(audio);
-        snk(reverbAudio);
-        % tScope([audio, mean(reverbAudio, 2)])
+        swag()
     end
 elseif strcmp(inputMode, 'DEVICE')
     disp(strcat('Begin signal input... (', inputDevice, ...
         ", CH. ", num2str(chanMap), ')'))
     tic
     while toc < loopTime
-        audio = src();
-        reverbAudio = reverb(audio);
-        snk(reverbAudio);
-        % tScope([audio, mean(reverbAudio, 2)])
+        swag()
     end
     disp('End signal input.')
 end
@@ -118,4 +109,15 @@ end
 release(src)
 release(snk)
 release(reverb)
-release(tScope)
+release(quickScope)
+
+%% SPECTRAL WAVETABLE ANALOG/GUITAR ALGORITHM
+
+    function swag()
+        audio = src();
+        reverbAudio = reverb(audio);
+        snk(reverbAudio);
+        % quickScope([audio, mean(reverbAudio, 2)])
+    end
+
+end
