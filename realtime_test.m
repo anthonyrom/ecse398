@@ -1,28 +1,121 @@
-% Read in audio file as 'real time' input
-file = 'strummed_chords';
-fileName = strcat('audio_samples/', file, '.flac');
+%% AUDIO INPUT
 
-% Options/defaults for AFR
-plays = 1; % number times to play file
-frameSize = 1024; % samples per frame
-readRange = [1 inf]; % range of samples to read
+% Choose input mode: either 'FILE' or 'DEVICE'
+inputMode = 'FILE';
+%   Then make sure to check/set the parameters for that input mode
+%   in the AUDIO INPUT section.
 
-% Create AFR object
-afr = dsp.AudioFileReader(fileName, 'PlayCount', plays, ...
-    'SamplesPerFrame', frameSize, 'ReadRange', readRange);
+% Number of samples to process with each loop iteration
+% Note: If using ASIO, set output buffer size equal to this.
+frameSize = 1024;
 
-% Options/defaults for ADW
-driver = 'ASIO'; % 'DirectSound' or 'ASIO', probably (windows only!)
-adwDev = 'Default'; % Device used for playback
+if strcmp(inputMode, 'FILE')
+    % Input mode 'FILE' : read audio from file
+    
+    % Parameters
+    fileName = 'strummed_chords.flac'; 
+    file = strcat('audio_samples/', fileName);
+    nPlays = 1; % Number of times to play file
+    readRange = [1 inf]; % Range of samples to be read
+    
+    % Create audio source
+    src = dsp.AudioFileReader(file, ...
+        'PlayCount', nPlays, ...
+        'SamplesPerFrame', frameSize, ...
+        'ReadRange', readRange);
 
-% Create ADW object for playback
-adw = audioDeviceWriter('SampleRate', afr.SampleRate);
-
-% THE LOOP
-while ~isDone(afr)
-    audio = afr(); % load frame (col. vector of samples)
-    adw(audio); % playback audio
+elseif strcmp(inputMode, 'DEVICE')
+    % Input mode 'DEVICE' : read audio from device
+    
+    % Parameters
+    sampleRate = 44100;
+    inputDriver = 'ASIO'; % N/A for Mac/Linux
+    inputDevice = 'Focusrite USB ASIO'; % List w/ getAudioDevices
+    nChannels = 2; % Number of input channels
+    chanMap = 2; % Which channel(s) to use
+    
+    % Create audio source
+    src = audioDeviceReader(sampleRate, ...
+        'Driver', inputDriver, ...
+        'Device', inputDevice, ...
+        'NumChannels', nChannels, ...
+        'SamplesPerFrame', frameSize, ...
+        'ChannelMappingSource', 'Property', ...
+        'ChannelMapping', chanMap);
+else
+    % Input mode not valid/selected
+    disp('Please set the input mode to either FILE or DEVICE')
 end
 
-release(afr);
-release(adw);
+%% AUDIO OUTPUT
+
+% Parameters
+outputDriver = 'ASIO'; % N/A for Mac/Linux
+outputDevice = 'Focusrite USB ASIO'; % List w/ getAudioDevices
+buffSize = frameSize; % Buffer size, must = frame size for ASIO
+
+% Create audio sink
+snk = audioDeviceWriter(...
+    'Driver', outputDriver, ...
+    'Device', outputDevice, ...
+    'SampleRate', src.SampleRate, ...
+    'SupportVariableSizeInput', true, ...
+    'BufferSize', buffSize);
+
+% This might be all that's needed for built-in soundcards:
+% snk = audioDeviceWriter(src.SampleRate)
+
+%% SCOPES + VISUALIZATION
+
+% Oscilloscope
+tScope = timescope(...
+    'SampleRate', src.SampleRate, ...
+    'BufferLength', src.SampleRate*2*2, ...
+    'YLimits', [-1, 1]);
+
+% Spectrum Analyzer
+fScope = dsp.SpectrumAnalyzer(...
+    );
+
+%% FX BLOCKS
+
+% Reverb (from example)
+reverb = reverberator(...
+    'SampleRate', src.SampleRate, ...
+    'PreDelay', 0, ...
+    'WetDryMix', 0.4);
+
+%% AUDIO STREAM LOOP
+
+loopTime = 1; % (seconds), Used only for DEVICE mode
+
+% This is pretty horrible right now since the loop has to be duplicated.
+% This would be fixed if all processing occurred in functions instead of
+% objects (so, not the reverb example)
+
+if strcmp(inputMode, 'FILE')
+    while ~isDone(src)
+        audio = src();
+        reverbAudio = reverb(audio);
+        snk(reverbAudio);
+        % tScope([audio, mean(reverbAudio, 2)])
+    end
+elseif strcmp(inputMode, 'DEVICE')
+    disp(strcat('Begin signal input... (', inputDevice, ...
+        ", CH. ", num2str(chanMap), ')'))
+    tic
+    while toc < loopTime
+        audio = src();
+        reverbAudio = reverb(audio);
+        snk(reverbAudio);
+        % tScope([audio, mean(reverbAudio, 2)])
+    end
+    disp('End signal input.')
+end
+
+%% RELEASE OBJECTS
+
+release(src)
+release(snk)
+release(reverb)
+release(tScope)
