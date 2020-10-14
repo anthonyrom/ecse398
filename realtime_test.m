@@ -14,7 +14,7 @@ if strcmp(inputMode, 'FILE')
     % Input mode 'FILE' : read audio from file
     
     % Parameters
-    fileName = 'strummed_chords.flac'; 
+    fileName = 'wonderwall_48k_32bit.flac'; 
     file = strcat('audio_samples/', fileName);
     nPlays = 1; % Number of times to play file
     readRange = [1 inf]; % Range of samples to be read
@@ -29,17 +29,15 @@ elseif strcmp(inputMode, 'DEVICE')
     % Input mode 'DEVICE' : read audio from device
     
     % Parameters
-    sampleRate = 44100;
+    sampleRate = 48000; % Samples/sec
     inputDriver = 'ASIO'; % N/A for Mac/Linux
-    inputDevice = 'Focusrite USB ASIO'; % List w/ getAudioDevices
-    nChannels = 2; % Number of input channels
-    chanMap = 2; % Which channel(s) to use
+    inputDevice = 'Analogue 1 + 2 (Focusrite Usb Audio)'; % List w/ getAudioDevices
+    chanMap = 1; % Which channel to use
     
     % Create audio source
     src = audioDeviceReader(sampleRate, ...
         'Driver', inputDriver, ...
         'Device', inputDevice, ...
-        'NumChannels', nChannels, ...
         'SamplesPerFrame', frameSize, ...
         'ChannelMappingSource', 'Property', ...
         'ChannelMapping', chanMap);
@@ -64,7 +62,7 @@ snk = audioDeviceWriter(...
     'BufferSize', buffSize);
 
 % This might be all that's needed for built-in soundcards:
-% snk = audioDeviceWriter(src.SampleRate)
+% snk = audioDeviceWriter(src.SampleRate);
 
 %% SCOPES + VISUALIZATION
 
@@ -103,7 +101,7 @@ reverb = reverberator(...
 
 %% AUDIO STREAM LOOP
 
-loopTime = 5; % (seconds), Used only for DEVICE mode
+loopTime = 15; % (seconds), Used only for DEVICE mode
 
 if strcmp(inputMode, 'FILE')
     while ~isDone(src)
@@ -134,8 +132,8 @@ release(spectrogram)
         inputAudio = src();
         
         % Algorithm goes here
-        step1 = ammod(inputAudio, 300, src.SampleRate);
-        outputAudio = reverb(step1);
+        %outputAudio = ammod(inputAudio, 300, src.SampleRate);
+        outputAudio = reverb(inputAudio);
         
         snk(outputAudio);
         
