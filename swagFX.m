@@ -9,14 +9,21 @@ classdef swagFX < audioPlugin
         rDiffusion = 0.5;
         rDecayFactor = 0.5;
         rHighFreqDamping = 0.0005;
-        rMix = 0.3;
+        rMix = 0.0;
         
         % Flanger Parameters
         fDelay = 0.001; % seconds
         fDepth = 30;
         fRate = 0.25; % Hz
         fFeedback = 0.4;
-        fMix = 0.3;
+        fMix = 0.0;
+        
+        % Waveshaping Parameters
+        w1 = 1;
+        w2 = 0;
+        w3 = 0;
+        w4 = 0;
+        wMix = 0.0;
     end
     properties (Access = private, Hidden)
         % Pre-computed constants (not tunable) 
@@ -78,7 +85,23 @@ classdef swagFX < audioPlugin
             audioPluginParameter('fMix', ...
                 'DisplayName', 'Flanger wet-dry mix', ...
                 'Label', '', ...
-                'Mapping', {'lin', 0, 1}));
+                'Mapping', {'lin', 0, 1}), ...
+            audioPluginParameter('wMix', ...
+                'DisplayName', 'Waveshaper wet-dry mix', ...
+                'Label', '', ...
+                'Mapping', {'lin', 0, 1}), ...
+            audioPluginParameter('w1', ...
+                'DisplayName', 'W1', ...
+                'Label', '', 'Mapping', {'lin', -5, 5}), ...
+            audioPluginParameter('w2', ...
+                'DisplayName', 'W2', ...
+                'Label', '', 'Mapping', {'lin', -5, 5}), ...
+            audioPluginParameter('w3', ...
+                'DisplayName', 'W3', ...
+                'Label', '', 'Mapping', {'lin', -5, 5}), ...
+            audioPluginParameter('w4', ...
+                'DisplayName', 'W4', ...
+                'Label', '', 'Mapping', {'lin', -5, 5}));
     end
     methods
         function plugin = swagFX
@@ -95,6 +118,8 @@ classdef swagFX < audioPlugin
                 'SampleRate', fs);
             % Sample rate
             plugin.pSR = fs;
+            
+            % 
         end
         function set.fDepth(plugin, val)
             plugin.pSine.Amplitude = val;
@@ -119,6 +144,7 @@ classdef swagFX < audioPlugin
             % Instructions to process input audio signal
             frameSize = size(in, 1);
             
+            % Flanger settings
             flangerSR = plugin.pSR;
             flangerOsc = plugin.pSine;
             flangerDelay = plugin.pFractionalDelay;
@@ -131,13 +157,25 @@ classdef swagFX < audioPlugin
             plugin.Reverb.HighFrequencyDamping = plugin.rHighFreqDamping;
             plugin.Reverb.WetDryMix = plugin.rMix;
             
-            % Flanger
+            % Waveshaper Settings
+            wc1 = plugin.w1;
+            wc2 = plugin.w2;
+            wc3 = plugin.w3;
+            wc4 = plugin.w4;
+            shapeMix = plugin.wMix;
+            
+            % Apply Flanger
             delaySamples = plugin.fDelay*flangerSR;
             flangerOsc.SamplesPerFrame = frameSize;
             delayVec = delaySamples+flangerOsc();
             delayedIn = flangerDelay(delayVec, in);
             mix = plugin.fMix;
-            y = (1-mix)*in + mix.*delayedIn;
+            x = (1-mix)*in + mix.*delayedIn;
+            
+            % Apply Waveshaping
+            shapedIn = wc1*x + wc2*(x.^2) + wc3*(x.^3) + wc4*(x.^4);
+            % shapedIn = chebyshevU(2, x);
+            y = (1-shapeMix)*x + shapeMix.*shapedIn;
             
             % Apply Reverb and output
             out = plugin.Reverb(y);
