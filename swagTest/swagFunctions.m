@@ -1,17 +1,17 @@
-function transform_tests
+function swagFunctions
 
-% parameters that could be tunable
-Mval = 1024; % samples per frame
-A = 1;
-W = (exp(-2*pi*1i/Mval));
-%W = nthroot(1.2, Mval)*exp((1i*2*pi)/Mval);
+% parameters that could be tunable]
+Mval = 256; % samples per frame
+A = 1.1;
+%W = (exp(-2*pi*1i/factor));
+W = nthroot(1.2, Mval)*exp((1i*2*pi)/Mval);
 % could also choose between abs, real, or imag part of answer to play
 
 % sampling rate has large effect on sound produced
 
 % read first numframes frames of audio file
 %[samples, Fs] = audioread('audio_samples/wonderwall_48k_32bit.flac');
-[samples, Fs] = audioread('192k/two.wav');
+[samples, Fs] = audioread('192k/one.wav');
 
 numFrames = length(samples)/Mval;
 
