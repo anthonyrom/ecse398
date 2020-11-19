@@ -54,7 +54,7 @@ soundsc(abs(outSamples), Fs);
         M = length(y);
         assert(M == N);
         n = N;
-        x = double.empty(0, n);
+        x = zeros(0, n);
         for k = 0:(n-1)
             % Multiply P^(-1) and y
             x(k+1) = (W.^(-((k^2)/2)))*y(k+1);

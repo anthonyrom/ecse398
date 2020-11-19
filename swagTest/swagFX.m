@@ -20,7 +20,7 @@ classdef swagFX < audioPlugin
                 'Mapping', {'lin', 0.5, 2}), ...
             audioPluginParameter('swagG', ...
                 'DisplayName', 'Spiral contour constant', ...
-                'Mapping', {'lin', 0.5, 1.5}), ...
+                'Mapping', {'lin', 0.9, 1.5}), ...
             audioPluginParameter('swagS', ...
                 'DisplayName', 'Component select', ...
                 'Mapping', {'enum', 'cplx mag', 'real', 'imag'}));
@@ -36,11 +36,11 @@ classdef swagFX < audioPlugin
             swagSval = plugin.swagS;
             mixVal = plugin.swagMix;
             
-            % Apply waveshaping
-            trans = FCZT(in, swagM, swagW, swagAval);
-            preOut1 = IFCZT(trans, swagM, swagW, swagAval);
-            
-            % Select output component
+            % Apply SWAG waveshaping (output: outSWAG)
+            inputCh1 = in(:,1);
+            trans1 = FCZT(inputCh1, swagM, swagW, swagAval);
+            res1 = IFCZT(trans1, swagM, swagW, swagAval);
+            preOut1 = vertcat(res1, res1).';
             switch(swagSval)
                 case OutputSelect.cplxMag
                     preOut2 = abs(preOut1);
@@ -52,9 +52,12 @@ classdef swagFX < audioPlugin
                     % This shouldn't happen
                     preOut2 = in;
             end
-            
-            % Apply wet/dry mixing
-            out = ((1-mixVal).*in) + (mixVal.*sum(preOut2,3));
+            outSWAG = rescale (preOut2, -1, 1);
+
+            % Apply wet/dry mixing to preOutF
+            out1 = ((1-mixVal).*in) + (mixVal.*sum(outSWAG,2));
+            % Scale samples for audio range
+            out = rescale(out1, -1, 1);
         end
         function reset(plugin)
             % Instructions to reset plugin.
