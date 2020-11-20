@@ -2,7 +2,7 @@ function xHat = ZeroPad(x, n)
         % Pad an array to length n by appending zeros
         m = length(x);
         assert(m <= n);
-        xHat = double.empty(0, n);
+        xHat = complex(zeros(0, n), 0);
         for k = 1:m
             xHat(k) = x(k);
         end

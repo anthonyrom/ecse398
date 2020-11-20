@@ -5,12 +5,14 @@ function y = ToeplitzMultiplyE(r, c, x)
         % c = (c(1), c(2), ... c(M)), where r(1) = c(1).
         N = length(r);
         M = length(c);
-        assert(c(1) == r(1));
+        disp(size(c))
+        %disp(c(1,1))
+        assert(c(1,1) == r(1,1));
         assert(length(x) == N);
         n = int32(2^(log2(M+N-1)));
         % Form an array cHat by concatenating c, n-(M+N-1)
         % zeros, and the reverse of the last N-1 elements of r.
-        cHat = double.empty(0, n);
+        cHat = complex(zeros(0, n), 0);
         for k = 1:M
             cHat(k) = c(k);
         end
@@ -21,7 +23,7 @@ function y = ToeplitzMultiplyE(r, c, x)
         xHat = ZeroPad(x, n);
         yHat = CirculantMultiply(cHat, xHat);
         % The result is the first M elements of yHat
-        y = double.empty(0, M);
+        y = complex(zeros(0, M), 0);
         for k = 1:M
             y(k) = yHat(k);
         end

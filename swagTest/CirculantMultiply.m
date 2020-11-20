@@ -7,7 +7,7 @@ function y = CirculantMultiply(c, x)
         assert(length(x) == n);
         C = fft(c);
         X = fft(x);
-        Y = double.empty(0, n);
+        Y = zeros(0, n);
         for k = 1:n
             Y(k) = C(k)*X(k);
         end

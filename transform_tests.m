@@ -1,7 +1,7 @@
 function transform_tests
 
 % parameters that could be tunable
-Mval = 1024; % samples per frame
+Mval = 256; % samples per frame
 A = 1;
 W = (exp(-2*pi*1i/Mval));
 %W = nthroot(1.2, Mval)*exp((1i*2*pi)/Mval);
@@ -11,7 +11,7 @@ W = (exp(-2*pi*1i/Mval));
 
 % read first numframes frames of audio file
 %[samples, Fs] = audioread('audio_samples/wonderwall_48k_32bit.flac');
-[samples, Fs] = audioread('192k/two.wav');
+[samples, Fs] = audioread('192k/one.wav');
 
 numFrames = length(samples)/Mval;
 

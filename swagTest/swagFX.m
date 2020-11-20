@@ -31,7 +31,8 @@ classdef swagFX < audioPlugin
 
             % Write settings
             swagM = length(in); % Frame size (# of samples)
-            swagW = nthroot(plugin.swagG, swagM)*exp((1i*2*pi)/swagM); % Spiral contour
+            %swagW = nthroot(plugin.swagG, swagM)*exp((1i*2*pi)/swagM); % Spiral contour
+            swagW = exp((1i*2*pi)/swagM);
             swagAval = plugin.swagA;
             swagSval = plugin.swagS;
             mixVal = plugin.swagMix;
@@ -55,7 +56,8 @@ classdef swagFX < audioPlugin
             outSWAG = rescale (preOut2, -1, 1);
 
             % Apply wet/dry mixing to preOutF
-            out1 = ((1-mixVal).*in) + (mixVal.*sum(outSWAG,2));
+            %out1 = ((1-mixVal).*in) + (mixVal.*sum(outSWAG,2));
+            out1 = (1-mixVal)*in + mixVal.*outSWAG;
             % Scale samples for audio range
             out = rescale(out1, -1, 1);
         end
